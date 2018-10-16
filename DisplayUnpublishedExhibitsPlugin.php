@@ -13,11 +13,10 @@ class DisplayUnpublishedExhibitsPlugin extends Omeka_Plugin_AbstractPlugin
         $db = get_db();
         $table = $db->getTable('Exhibit');
         $privateExhibits = $table->fetchObjects('SELECT * FROM omeka_exhibits WHERE public = 0');
-        $content = '';
+        $content = '<h2> Unpublished Exhibits </h2>';;
         $titles = '';
         $images = '';
         $descriptions = '';
-        echo '<h2> Unpublished Exhibits </h2>';
         foreach ($privateExhibits as $exhibit) {
             $content .= $view->partial('private_exhibit.php', array('exhibit' => $exhibit));
             release_object($exhibit);
