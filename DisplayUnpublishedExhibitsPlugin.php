@@ -30,9 +30,9 @@ class DisplayUnpublishedExhibitsPlugin extends Omeka_Plugin_AbstractPlugin
         }
       }
       catch (Exception $e) {
+        throw new InvalidArgumentException('Invalid tag for unpublished_exhibits shortcode. Private exhibits not found.');
+        #return '<h2><strong style="color: red;"> Invalid tag. Private exhibits not found. </strong></h2>';
         #echo $e->getMessage();
-        return '<h2> Invalid tag. Private exhibits not found. </h2>';
-        #throw new InvalidArgumentException('Invalid tag. Private exhibits not found.');
       }
     }
 
@@ -106,23 +106,32 @@ class DisplayUnpublishedExhibitsPlugin extends Omeka_Plugin_AbstractPlugin
       $images = '';
       $descriptions = '';
       foreach ($private_exhibits as $private_exhibit) {
-          $private_exhibit_image_link = $this->get_link_to_image_if_it_exists($private_exhibit);
+          $private_exhibit_image_link = $this->get_image_address_if_it_exists($private_exhibit);
           $content .= $view->partial('private_exhibit.php', array('exhibit' => $private_exhibit, 'image_link' => $private_exhibit_image_link));
           release_object($private_exhibit);
       }
       return $content;
     }
 
-    public function get_link_to_image_if_it_exists($exhibit){
+    public function get_image_address_if_it_exists($exhibit){
+      #"Omeka will use the first attached file as the cover image."
       $exhibit_pages_ids = $this->get_page_ids_for_exhibit($exhibit);
       $exhibit_pages_ids_keys = $this->get_sorted_array_keys($exhibit_pages_ids);
+      #foreach page in exhibit (in order)
       foreach ($this->get_sorted_array_keys($exhibit_pages_ids) as $page_num) {
-        $block_ids = $this->get_block_ids_from_a_page_id($exhibit_pages_ids[$page_num]);
+        $search_page_id = $exhibit_pages_ids[$page_num];
+        $block_ids = $this->get_block_ids_from_a_page_id($search_page_id);
+        #foreach block in page (in order)
         foreach ($this->get_sorted_array_keys($block_ids) as $block_num) {
-          $file_ids = $this->get_file_ids_from_a_block_id($block_ids[$block_num]);
+          $block_id = $block_ids[$block_num];
+          $file_ids = $this->get_file_ids_from_a_block_id($block_id);
+          #foreach file(attachment) in block (in order)
           foreach ($this->get_sorted_array_keys($file_ids) as $file_num) {
+            $file_id = $file_ids[$file_num];
+            #if file is an image, return image
             if ($this->file_type_from_file_id_is_image($file_ids[$file_num])){
-              return $file_link_address;
+              $file_address = $this->get_image_link_from_file_id($file_id);
+              return $file_address;
             }
           }
         }
@@ -165,22 +174,18 @@ class DisplayUnpublishedExhibitsPlugin extends Omeka_Plugin_AbstractPlugin
       $exhibit_attachments = $exhibit_attachment_table->fetchObjects("SELECT * FROM omeka_exhibit_block_attachments WHERE block_id = $block_id");
       $exhibit_attachment_ids = array();
       foreach ($exhibit_attachments as $exhibit_attachment){
-        $exhibit_attachment_ids[$exhibit_attachment['order']] = $exhibit_attachment['id'];
+        $exhibit_attachment_ids[$exhibit_attachment['order']] = $exhibit_attachment['file_id'];
       }
       return $exhibit_attachment_ids;
     }
 
     public function file_type_from_file_id_is_image($file_id){
+      if($file_id==NULL){
+        return False;
+      }
       $db = get_db();
       $files_table = $db->getTable('File');
-      $exhibit_attachment_file = $files_table->fetchObjects("SELECT * FROM omeka_files WHERE id = $file_id");
-      if (empty($exhibit_attachment_file)==true){
-        return false;
-      }
-      echo $exhibit_attachment_file['order'];
-      echo var_dump($exhibit_attachment_file);
-      #echo serialize($exhibit_attachment_file);
-
+      $exhibit_attachment_file = $files_table->fetchObject("SELECT * FROM omeka_files WHERE id = $file_id");
       $file_mime_type = $exhibit_attachment_file['mime_type'];
       if (strpos($file_mime_type, 'image') !== false) {
         return True;
@@ -192,10 +197,11 @@ class DisplayUnpublishedExhibitsPlugin extends Omeka_Plugin_AbstractPlugin
     public function get_image_link_from_file_id($file_id){
       $db = get_db();
       $files_table = $db->getTable('File');
-      $file = $files_table->fetchObjects("SELECT * FROM omeka_files WHERE id = $file_id");
+      $file = $files_table->fetchObject("SELECT * FROM omeka_files WHERE id = $file_id");
       $filename = $file['filename'];
-      $file_link_address = 'files/square_thumbnails/' . $filename;
-      return $file_link_address;
+      $filename_no_file_extension = substr($filename, 0, strlen($filename)-4);
+      $file_address = 'files/square_thumbnails/' . $filename_no_file_extension . '.jpg';
+      return $file_address;
     }
 }
 ?>
