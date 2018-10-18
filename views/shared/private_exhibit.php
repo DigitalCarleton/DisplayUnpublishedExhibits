@@ -4,8 +4,17 @@
         $exhibit = get_current_record('exhibit');
     }
     ?> <h3> <?php echo html_escape($exhibit->title); ?> </h3>
+    <?php
 
-    <?php if ($exhibitImage = record_image($exhibit)):
+    #echo $exhibit->hasThumbnail() != NULL;
+
+    #$file->getWebPath($format);
+
+    #$uri = $file->getWebPath($format);
+    #$fileMarkup = new Omeka_View_Helper_FileMarkup;
+    #$fallback = $fileMarkup->_getFallbackImage($file);
+
+    if ($exhibitImage = record_image(($exhibit))):
         $first_pos = strpos($exhibitImage, 'omeka/');
         $second_pos = strpos($exhibitImage, "\"", $first_pos);
         $length = $second_pos - $first_pos;
@@ -20,6 +29,22 @@
           imagepng($image_resource_id, $gray_filename_path, 9);
         }
         echo '<div class="image" >' . '<img src=' . $gray_filename_path . ' />' . '</div>';
+
     endif; ?>
     <p><?php echo snippet_by_word_count(metadata($exhibit, 'description', array('no_escape' => true))); ?></p>
+
 </div>
+
+<?php
+/*
+#$db = get_db();
+#$exhibits_table = $db->getTable('Exhibit');
+#$exhibit_id = $exhibit['id'];
+#echo $exhibit_id;
+#$exhibit_record = $exhibits_table->fetchObject("SELECT * FROM omeka_exhibits WHERE id = $exhibit_id");
+#
+*/
+
+
+
+?>
