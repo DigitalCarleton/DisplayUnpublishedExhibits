@@ -10,7 +10,7 @@ class DisplayUnpublishedExhibitsPlugin extends Omeka_Plugin_AbstractPlugin
 
     public function display_unpublished_exhibits_shortcode($args, $view)
     {
-      {
+      try {
         $db = get_db();
         $exhibits_table = $db->getTable('Exhibit');
         if (!(empty($args)) && in_array('tags', array_keys($args))) {
