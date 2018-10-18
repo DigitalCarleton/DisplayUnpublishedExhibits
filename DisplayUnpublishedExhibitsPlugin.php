@@ -106,14 +106,14 @@ class DisplayUnpublishedExhibitsPlugin extends Omeka_Plugin_AbstractPlugin
       $images = '';
       $descriptions = '';
       foreach ($private_exhibits as $private_exhibit) {
-          $private_exhibit_image_link = $this->get_image_address_if_it_exists($private_exhibit);
+          $private_exhibit_image_link = $this->get_first_public_image_address_if_one_exists($private_exhibit);
           $content .= $view->partial('private_exhibit.php', array('exhibit' => $private_exhibit, 'image_link' => $private_exhibit_image_link));
           release_object($private_exhibit);
       }
       return $content;
     }
 
-    public function get_image_address_if_it_exists($exhibit){
+    public function get_first_public_image_address_if_one_exists($exhibit){
       #"Omeka will use the first attached file as the cover image."
       $exhibit_pages_ids = $this->get_page_ids_for_exhibit($exhibit);
       $exhibit_pages_ids_keys = $this->get_sorted_array_keys($exhibit_pages_ids);
@@ -128,8 +128,8 @@ class DisplayUnpublishedExhibitsPlugin extends Omeka_Plugin_AbstractPlugin
           #foreach file(attachment) in block (in order)
           foreach ($this->get_sorted_array_keys($file_ids) as $file_num) {
             $file_id = $file_ids[$file_num];
-            #if file is an image, return image
-            if ($this->file_type_from_file_id_is_image($file_ids[$file_num])){
+            #if file is an image, return image -> returns first public image in exhibit if one exists
+            if ($this->file_type_is_image($file_id) && $this->file_is_public($file_id)){
               $file_address = $this->get_image_link_from_file_id($file_id);
               return $file_address;
             }
@@ -179,15 +179,32 @@ class DisplayUnpublishedExhibitsPlugin extends Omeka_Plugin_AbstractPlugin
       return $exhibit_attachment_ids;
     }
 
-    public function file_type_from_file_id_is_image($file_id){
+    public function file_type_is_image($file_id){
       if($file_id==NULL){
         return False;
       }
       $db = get_db();
       $files_table = $db->getTable('File');
-      $exhibit_attachment_file = $files_table->fetchObject("SELECT * FROM omeka_files WHERE id = $file_id");
-      $file_mime_type = $exhibit_attachment_file['mime_type'];
+      $file = $files_table->fetchObject("SELECT * FROM omeka_files WHERE id = $file_id");
+      $file_mime_type = $file['mime_type'];
       if (strpos($file_mime_type, 'image') !== false) {
+        return True;
+      } else {
+        return False;
+      }
+    }
+
+    public function file_is_public($file_id){
+      if($file_id==NULL){
+        return False;
+      }
+      $db = get_db();
+      $files_table = $db->getTable('File');
+      $file = $files_table->fetchObject("SELECT * FROM omeka_files WHERE id = $file_id");
+      $item_id = $file['item_id'];
+      $items_table = $db->getTable('Item');
+      $item = $items_table->fetchObject("SELECT * FROM omeka_items WHERE id = $item_id");
+      if ($item['public']==1) {
         return True;
       } else {
         return False;
