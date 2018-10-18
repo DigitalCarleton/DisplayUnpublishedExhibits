@@ -30,9 +30,10 @@ class DisplayUnpublishedExhibitsPlugin extends Omeka_Plugin_AbstractPlugin
         }
       }
       catch (Exception $e) {
-        throw new InvalidArgumentException('Invalid tag for unpublished_exhibits shortcode. Private exhibits not found.');
+        #throw new InvalidArgumentException('Invalid tag for unpublished_exhibits shortcode. Private exhibits not found.');
         #return '<h2><strong style="color: red;"> Invalid tag. Private exhibits not found. </strong></h2>';
-        #echo $e->getMessage();
+        # $e->getMessage();
+        return '';
       }
     }
 
