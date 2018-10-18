@@ -10,7 +10,7 @@ class DisplayUnpublishedExhibitsPlugin extends Omeka_Plugin_AbstractPlugin
 
     public function display_unpublished_exhibits_shortcode($args, $view)
     {
-      try {
+      //try {
         $db = get_db();
         $exhibits_table = $db->getTable('Exhibit');
         if (!(empty($args)) && in_array('tags', array_keys($args))) {
@@ -28,13 +28,13 @@ class DisplayUnpublishedExhibitsPlugin extends Omeka_Plugin_AbstractPlugin
         } else {
           return '';
         }
-      }
-      catch (Exception $e) {
+      //}
+      /*catch (Exception $e) {
         #throw new InvalidArgumentException('Invalid tag for unpublished_exhibits shortcode. Private exhibits not found.');
         #return '<h2><strong style="color: red;"> Invalid tag. Private exhibits not found. </strong></h2>';
         # $e->getMessage();
         return '';
-      }
+      }*/
     }
 
     public function get_tag_ids($tags)
