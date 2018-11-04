@@ -31,7 +31,8 @@ class DisplayUnpublishedExhibitsPlugin extends Omeka_Plugin_AbstractPlugin
       }
       catch (Exception $e) {
         debug($e->getMessage());
-        return 'TAG' . $args['tags'] . "DID NOT WORK :(" . $e;
+        #return 'TAG' . $args['tags'] . "DID NOT WORK :(" . $e;
+        return "";
       }
     }
 
@@ -51,7 +52,7 @@ class DisplayUnpublishedExhibitsPlugin extends Omeka_Plugin_AbstractPlugin
     }
 
     public function get_tag_id($tag, $tag_ids_db_table){
-      $tag = $this->remove_invisible_characters_from_string($tag);
+      $tag = trim($tag);
       $tag_record = $tag_ids_db_table->fetchObject("SELECT * FROM omeka_tags WHERE name = '$tag'");
       if (is_null($tag_record)){
         $tag_id = null;
@@ -59,19 +60,6 @@ class DisplayUnpublishedExhibitsPlugin extends Omeka_Plugin_AbstractPlugin
         $tag_id = $tag_record['id'];
       }
       return $tag_id;
-    }
-
-    public function remove_invisible_characters_from_string($string){
-      $string_array = str_split($string);
-      $new_string = array();
-      foreach ($string_array as $char){
-        if (in_array(strtolower($char), array('a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t',
-        'u','v','w','x','y','z'))){
-          $new_string[] = $char;
-        }
-      }
-      $new_string = implode($new_string);
-      return $new_string;
     }
 
     public function get_ids_of_exhibit_records_with_tag_ids($tag_ids)
