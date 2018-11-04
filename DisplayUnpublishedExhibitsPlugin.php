@@ -13,7 +13,7 @@ class DisplayUnpublishedExhibitsPlugin extends Omeka_Plugin_AbstractPlugin
       try {
         $db = get_db();
         $exhibits_table = $db->getTable('Exhibit');
-        if (!(empty($args)) && in_array('tags', array_keys($args))) {
+        if (isset($args['tags'])) {
             $tags = $args['tags'];
             $tag_ids = $this->get_tag_ids($tags);
             $tagged_exhibits_ids = $this->get_ids_of_exhibit_records_with_tag_ids($tag_ids);
@@ -30,10 +30,8 @@ class DisplayUnpublishedExhibitsPlugin extends Omeka_Plugin_AbstractPlugin
         }
       }
       catch (Exception $e) {
-        #throw new InvalidArgumentException('Invalid tag for unpublished_exhibits shortcode. Private exhibits not found.');
-        #return '<h2><strong style="color: red;"> Invalid tag. Private exhibits not found. </strong></h2>';
         debug($e->getMessage());
-        return '';
+        return 'TAG' . $args['tags'] . "DID NOT WORK :(" . $e;
       }
     }
 
@@ -43,21 +41,24 @@ class DisplayUnpublishedExhibitsPlugin extends Omeka_Plugin_AbstractPlugin
       $tag_ids_db_table = $db->getTable('Tag');
       $tags = explode(',', $tags);
       $tag_ids = array();
-      if (count($tags) > 1){
-        foreach ($tags as $tag) {
-          $tag = $this->remove_invisible_characters_from_string($tag);
-          $tag_record = $tag_ids_db_table->fetchObject("SELECT * FROM omeka_tags WHERE name = '$tag'");
-          $tag_id = $tag_record['id'];
-          $tag_ids[] = $tag_id;
+      foreach ($tags as $tag) {
+        $tag_id = $this->get_tag_id($tag, $tag_ids_db_table);
+        if ($tag_id){
+            $tag_ids[] =$tag_id;
         }
-      } else {
-        $tag = $tags[0];
-        $tag = $this->remove_invisible_characters_from_string($tag);
-        $tag_record = $tag_ids_db_table->fetchObject("SELECT * FROM omeka_tags WHERE name = '$tag'");
-        $tag_id = $tag_record['id'];
-        $tag_ids[] = $tag_id;
       }
       return $tag_ids;
+    }
+
+    public function get_tag_id($tag, $tag_ids_db_table){
+      $tag = $this->remove_invisible_characters_from_string($tag);
+      $tag_record = $tag_ids_db_table->fetchObject("SELECT * FROM omeka_tags WHERE name = '$tag'");
+      if (is_null($tag_record)){
+        $tag_id = null;
+      } else {
+        $tag_id = $tag_record['id'];
+      }
+      return $tag_id;
     }
 
     public function remove_invisible_characters_from_string($string){
@@ -75,6 +76,9 @@ class DisplayUnpublishedExhibitsPlugin extends Omeka_Plugin_AbstractPlugin
 
     public function get_ids_of_exhibit_records_with_tag_ids($tag_ids)
     {
+      if (empty($tag_ids)){
+        return array();
+      }
       $db = get_db();
       $records_tags_ids_table = $db->getTable('RecordsTags');
       $tagged_exhibits_ids = array();
@@ -91,12 +95,28 @@ class DisplayUnpublishedExhibitsPlugin extends Omeka_Plugin_AbstractPlugin
 
     public function get_tagged_private_exhibits_from_ids($tagged_exhibits_ids)
     {
+      if (empty($tagged_exhibits_ids)){
+        return array();
+      }
       $db = get_db();
       $exhibits_table = $db->getTable('Exhibit');
       $tagged_private_exhibits = array();
       foreach ($tagged_exhibits_ids as $tagged_exhibit_id){
-          $tagged_private_exhibit = $exhibits_table->fetchObject("SELECT * FROM omeka_exhibits WHERE id = $tagged_exhibit_id AND public = 0");
-          $tagged_private_exhibits[] = $tagged_private_exhibit;
+          $tagged_exhibit = $exhibits_table->fetchObject("SELECT * FROM omeka_exhibits WHERE id = $tagged_exhibit_id");
+          if ($tagged_exhibit['public'] == 0){
+              $tagged_private_exhibits[] = $tagged_exhibit;
+          }
+      }
+      return $tagged_private_exhibits;
+    }
+
+    public function get_private_exhibits_by_filtering_public_exhibits($tagged_exhibits)
+    {
+      $tagged_private_exhibits = array();
+      foreach ($tagged_exhibits as $tagged_exhibit){
+        if ($tagged_exhibit['public'] == 0) {
+          $tagged_private_exhibits[] = $tagged_exhibit;
+        }
       }
       return $tagged_private_exhibits;
     }
