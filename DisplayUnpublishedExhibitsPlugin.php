@@ -110,17 +110,6 @@ class DisplayUnpublishedExhibitsPlugin extends Omeka_Plugin_AbstractPlugin
       return $tagged_private_exhibits;
     }
 
-    public function get_private_exhibits_by_filtering_public_exhibits($tagged_exhibits)
-    {
-      $tagged_private_exhibits = array();
-      foreach ($tagged_exhibits as $tagged_exhibit){
-        if ($tagged_exhibit['public'] == 0) {
-          $tagged_private_exhibits[] = $tagged_exhibit;
-        }
-      }
-      return $tagged_private_exhibits;
-    }
-
     public function get_html_content_using_view_and_exhibits($view, $private_exhibits){
       $content = '<h2> Unpublished Exhibits </h2>';;
       $titles = '';
